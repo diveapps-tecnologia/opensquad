@@ -1,6 +1,6 @@
 import type { Graphics as PixiGraphics } from "pixi.js";
 import { COLORS } from "./palette";
-import { isoBox, groundShadow } from "./isoUtils";
+import { isoBox } from "./isoUtils";
 
 export function drawChair(g: PixiGraphics, cx: number, cy: number): void {
   g.ellipse(cx, cy + 8, 14, 6);

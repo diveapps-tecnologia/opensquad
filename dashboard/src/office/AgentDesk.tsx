@@ -3,25 +3,31 @@ import { extend } from "@pixi/react";
 import { Container, Graphics, Text, Sprite } from "pixi.js";
 import type { Agent } from "@/types/state";
 import type { Graphics as PixiGraphics, TextStyleOptions, Texture } from "pixi.js";
-import { COLORS, CELL_W, CELL_H, TILE } from "./palette";
-import { drawDeskArea, drawWorkstationBack, drawWorkstationFront, drawScreenGlow, drawDeskAccessories } from "./drawDesk";
+import { COLORS, CELL_W, CELL_H, ISO_MARGIN_TILES } from "./palette";
+import { drawChair, drawDesk, drawMonitor, drawKeyboardMouse, drawDeskAccessories } from "./drawDesk";
+import { toIso } from "./isoUtils";
 import { getCharacterTextures } from "./textures";
 
 extend({ Container, Graphics, Text, Sprite });
 
 export { CELL_W, CELL_H };
 
-export const GRID_OFFSET_X = TILE * 3;
-export const GRID_OFFSET_Y = TILE * 4;  // was TILE * 3 — extra space for name cards
-
 interface AgentDeskProps {
   agent: Agent;
   agentIndex: number;
+  originX: number;
+  originY: number;
+  totalCols: number;
+  totalRows: number;
 }
 
-export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
-  const x = GRID_OFFSET_X + (agent.desk.col - 1) * CELL_W;
-  const y = GRID_OFFSET_Y + (agent.desk.row - 1) * CELL_H;
+export function AgentDesk({ agent, agentIndex, originX, originY }: AgentDeskProps) {
+  // Map agent desk grid position to iso screen coords (offset by margin)
+  const isoCol = agent.desk.col - 1 + ISO_MARGIN_TILES;
+  const isoRow = agent.desk.row - 1 + ISO_MARGIN_TILES;
+  const isoPos = toIso(isoCol, isoRow, originX, originY);
+  const x = isoPos.x - CELL_W / 2;
+  const y = isoPos.y - CELL_H / 2;
 
   const [frame, setFrame] = useState(0);
   const frameRef = useRef<number>(0);
@@ -56,11 +62,10 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
   const drawStationBack = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      drawDeskArea(g, 0, 0);
-      drawWorkstationBack(g, 0, 0);
-      if (agent.status === "working" || agent.status === "delivering") {
-        drawScreenGlow(g, 0, 0);
-      }
+      // Behind character: chair, then desk, then monitor
+      drawChair(g, 0, 0);
+      drawDesk(g, 0, 0);
+      drawMonitor(g, 0, 0, agent.status);
     },
     [agent.status]
   );
@@ -68,7 +73,8 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
   const drawStationFront = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      drawWorkstationFront(g, 0, 0);
+      // In front of character: keyboard/mouse + accessories
+      drawKeyboardMouse(g, 0, 0);
       drawDeskAccessories(g, 0, 0, agentIndex);
     },
     [agentIndex]

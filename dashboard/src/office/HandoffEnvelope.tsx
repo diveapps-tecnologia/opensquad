@@ -2,8 +2,8 @@ import { extend } from "@pixi/react";
 import { Container, Graphics } from "pixi.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Graphics as PixiGraphics } from "pixi.js";
-import { CELL_W, CELL_H, GRID_OFFSET_X, GRID_OFFSET_Y } from "./AgentDesk";
-import { COLORS } from "./palette";
+import { COLORS, ISO_MARGIN_TILES } from "./palette";
+import { toIso } from "./isoUtils";
 import type { Agent, Handoff } from "@/types/state";
 
 extend({ Container, Graphics });
@@ -12,19 +12,22 @@ interface HandoffEnvelopeProps {
   handoff: Handoff;
   fromAgent: Agent;
   toAgent: Agent;
+  originX: number;
+  originY: number;
 }
 
-export function HandoffEnvelope({ handoff, fromAgent, toAgent }: HandoffEnvelopeProps) {
+export function HandoffEnvelope({ handoff, fromAgent, toAgent, originX, originY }: HandoffEnvelopeProps) {
   const [pos, setPos] = useState<{ x: number; y: number; scale: number; rotation: number } | null>(null);
   const animatingRef = useRef(false);
   const lastHandoffRef = useRef<string | null>(null);
 
-  const deskCenterX = CELL_W / 2;
-  const deskCenterY = CELL_H / 2;
-  const fromX = GRID_OFFSET_X + (fromAgent.desk.col - 1) * CELL_W + deskCenterX;
-  const fromY = GRID_OFFSET_Y + (fromAgent.desk.row - 1) * CELL_H + deskCenterY;
-  const toX = GRID_OFFSET_X + (toAgent.desk.col - 1) * CELL_W + deskCenterX;
-  const toY = GRID_OFFSET_Y + (toAgent.desk.row - 1) * CELL_H + deskCenterY;
+  // Convert desk grid positions to iso screen coords
+  const fromIso = toIso(fromAgent.desk.col - 1 + ISO_MARGIN_TILES, fromAgent.desk.row - 1 + ISO_MARGIN_TILES, originX, originY);
+  const toIsoPos = toIso(toAgent.desk.col - 1 + ISO_MARGIN_TILES, toAgent.desk.row - 1 + ISO_MARGIN_TILES, originX, originY);
+  const fromX = fromIso.x;
+  const fromY = fromIso.y;
+  const toX = toIsoPos.x;
+  const toY = toIsoPos.y;
 
   useEffect(() => {
     const key = `${handoff.from}-${handoff.to}-${handoff.completedAt}`;

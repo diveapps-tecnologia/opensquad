@@ -2,18 +2,20 @@ import { Application, extend } from "@pixi/react";
 import { Container, Graphics } from "pixi.js";
 import { useCallback, useMemo } from "react";
 import { useSquadStore } from "@/store/useSquadStore";
-import { AgentDesk, CELL_W, CELL_H, GRID_OFFSET_X, GRID_OFFSET_Y } from "./AgentDesk";
+import { AgentDesk } from "./AgentDesk";
 import { HandoffEnvelope } from "./HandoffEnvelope";
 import { sortAgentsByDesk, findAgent } from "@/lib/normalizeState";
-import { drawFloor } from "./drawRoom";
-import { drawBookshelf, drawPlant, drawClock, drawWhiteboard, drawCoffeeMachine, drawFilingCabinet } from "./drawFurniture";
-import { TILE, COLORS, SCENE_SCALE } from "./palette";
+import { drawFloor, drawWalls, drawRug } from "./drawRoom";
+import {
+  drawBookshelf, drawPlant, drawClock, drawWhiteboard,
+  drawCoffeeMachine, drawFilingCabinet, drawFloorLamp,
+  drawWindow, drawCouch, drawSideTable,
+} from "./drawFurniture";
+import { toIso } from "./isoUtils";
+import { ISO_TILE_W, ISO_TILE_H, ISO_MARGIN_TILES, SCENE_SCALE } from "./palette";
 import type { Graphics as PixiGraphics } from "pixi.js";
 
 extend({ Container, Graphics });
-
-const MIN_STAGE_W = 400;
-const MIN_STAGE_H = 320;
 
 export function OfficeScene() {
   const state = useSquadStore((s) =>
@@ -28,68 +30,100 @@ export function OfficeScene() {
     [state]
   );
 
+  // --- Iso grid dimensions ---
   const maxCol = agents.length > 0 ? Math.max(...agents.map(a => a.desk.col)) : 1;
   const maxRow = agents.length > 0 ? Math.max(...agents.map(a => a.desk.row)) : 1;
 
-  const wallTop = TILE * 2;
-  const marginX = Math.round(TILE * 1.5);
-  const marginY = TILE * 1;
-  const floorW = marginX * 2 + maxCol * CELL_W;
-  const floorH = marginY * 2 + maxRow * CELL_H;
-  const floorX = GRID_OFFSET_X - marginX;
-  const floorY = GRID_OFFSET_Y - marginY;
-  const stageW = Math.max(floorX + floorW + marginX, MIN_STAGE_W);
-  const stageH = Math.max(floorY + floorH + marginY, MIN_STAGE_H);
+  const gridCols = maxCol + 1;
+  const gridRows = maxRow + 1;
+  const totalCols = gridCols + ISO_MARGIN_TILES * 2;
+  const totalRows = gridRows + ISO_MARGIN_TILES * 2;
+
+  // --- Stage size and origin ---
+  const floorW = (totalCols + totalRows) * ISO_TILE_W / 2;
+  const floorH = (totalCols + totalRows) * ISO_TILE_H / 2 + 80;
+  const stageW = Math.max(floorW + 60, 500);
+  const stageH = Math.max(floorH + 100, 400);
+  const originX = stageW / 2;
+  const originY = 80;
+
+  // --- Depth-sorted agents (back to front by col+row) ---
+  const sortedAgents = useMemo(() => {
+    return [...agents].sort((a, b) => (a.desk.col + a.desk.row) - (b.desk.col + b.desk.row));
+  }, [agents]);
 
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      // Dark void surround (Gather.town style)
+      // Dark void background
       g.rect(0, 0, stageW, stageH);
       g.fill({ color: 0x101018 });
 
-      // Floor (wood planks)
-      drawFloor(g, floorW, floorH, floorX, floorY);
+      // Floor tiles
+      drawFloor(g, totalCols, totalRows, originX, originY);
 
-      // Top wall — clean cream
-      g.rect(floorX - 1, 0, floorW + 2, wallTop);
-      g.fill({ color: COLORS.wallFace });
-      // Baseboard (dark strip at bottom of wall)
-      g.rect(floorX - 1, wallTop - 3, floorW + 2, 3);
-      g.fill({ color: COLORS.wallShadow });
-      // Shadow cast on floor from wall
-      g.rect(floorX, wallTop, floorW, 3);
-      g.fill({ color: 0x000000, alpha: 0.06 });
+      // Walls (back + left edges)
+      drawWalls(g, totalCols, totalRows, originX, originY);
 
-      // Room borders (thin dark lines around floor perimeter)
-      g.rect(floorX - 1, wallTop, 1, floorH);
-      g.fill({ color: COLORS.wallShadow });
-      g.rect(floorX + floorW, wallTop, 1, floorH);
-      g.fill({ color: COLORS.wallShadow });
-      g.rect(floorX - 1, wallTop + floorH, floorW + 2, 1);
-      g.fill({ color: COLORS.wallShadow });
+      // Rug in the center
+      drawRug(g, totalCols / 2, totalRows / 2, originX, originY);
 
-      // Wall-mounted furniture
-      const wallItemY = 4;
-      drawBookshelf(g, floorX + 10, wallItemY);
-      if (floorW > 300) {
-        drawBookshelf(g, floorX + floorW - 74, wallItemY);
-      }
-      drawWhiteboard(g, floorX + floorW / 2 - 24, wallItemY);
-      drawClock(g, floorX + floorW / 2 + 28, wallItemY + 6);
+      // --- Wall decorations (along back wall, row ~0) ---
+      // Bookshelf near left end of back wall
+      const bsPos = toIso(2, 0, originX, originY);
+      drawBookshelf(g, bsPos.x, bsPos.y - 60);
 
-      // Floor furniture
-      drawPlant(g, floorX + 4, floorY + 8);
-      drawPlant(g, floorX + floorW - 36, floorY + 8);
-      drawPlant(g, floorX + 4, floorY + floorH - 36);
-      drawFilingCabinet(g, floorX + floorW - 36, floorY + floorH - 52);
+      // Whiteboard at center of back wall
+      const wbCol = Math.floor(totalCols / 2);
+      const wbPos = toIso(wbCol, 0, originX, originY);
+      drawWhiteboard(g, wbPos.x, wbPos.y - 60);
 
-      if (floorH > 200) {
-        drawCoffeeMachine(g, floorX + floorW - 36, floorY + floorH / 2 - 16);
+      // Clock near right end of back wall
+      const clkCol = totalCols - 3;
+      const clkPos = toIso(clkCol, 0, originX, originY);
+      drawClock(g, clkPos.x, clkPos.y - 54);
+
+      // Window on left wall
+      const winPos = toIso(0, 2, originX, originY);
+      drawWindow(g, winPos.x - 30, winPos.y - 60);
+
+      // --- Floor furniture ---
+      // Plants in corners
+      const plantTL = toIso(1, 1, originX, originY);
+      drawPlant(g, plantTL.x, plantTL.y);
+
+      const plantTR = toIso(totalCols - 2, 1, originX, originY);
+      drawPlant(g, plantTR.x, plantTR.y);
+
+      const plantBL = toIso(1, totalRows - 2, originX, originY);
+      drawPlant(g, plantBL.x, plantBL.y);
+
+      const plantBR = toIso(totalCols - 2, totalRows - 2, originX, originY);
+      drawPlant(g, plantBR.x, plantBR.y);
+
+      // Floor lamp on left side
+      const lampPos = toIso(1, Math.floor(totalRows / 2), originX, originY);
+      drawFloorLamp(g, lampPos.x, lampPos.y);
+
+      // Coffee machine on right side
+      const coffeePos = toIso(totalCols - 2, Math.floor(totalRows / 2), originX, originY);
+      drawCoffeeMachine(g, coffeePos.x, coffeePos.y);
+
+      // Filing cabinet on right side lower
+      const cabinetPos = toIso(totalCols - 2, Math.floor(totalRows / 2) + 2, originX, originY);
+      drawFilingCabinet(g, cabinetPos.x, cabinetPos.y);
+
+      // Couch + side table in bottom-left area (if room is big enough)
+      if (totalRows > 5 && totalCols > 5) {
+        const couchPos = toIso(2, totalRows - 2, originX, originY);
+        drawCouch(g, couchPos.x, couchPos.y);
+
+        const stPos = toIso(3, totalRows - 2, originX, originY);
+        drawSideTable(g, stPos.x, stPos.y);
       }
     },
-    [stageW, stageH, floorW, floorH, floorX, floorY, wallTop]
+    [stageW, stageH, totalCols, totalRows, originX, originY]
   );
 
   if (!state) {
@@ -124,9 +158,20 @@ export function OfficeScene() {
       <Application width={stageW * SCENE_SCALE} height={stageH * SCENE_SCALE} backgroundColor={0x101018}>
         <pixiContainer scale={SCENE_SCALE}>
           <pixiGraphics draw={drawBackground} />
-          {agents.map((agent, i) => (
-            <AgentDesk key={agent.id} agent={agent} agentIndex={i} />
-          ))}
+          {sortedAgents.map((agent, i) => {
+            const agentIndex = agents.indexOf(agent);
+            return (
+              <AgentDesk
+                key={agent.id}
+                agent={agent}
+                agentIndex={agentIndex >= 0 ? agentIndex : i}
+                originX={originX}
+                originY={originY}
+                totalCols={totalCols}
+                totalRows={totalRows}
+              />
+            );
+          })}
           {state.handoff &&
             (() => {
               const from = findAgent(state, state.handoff!.from);
@@ -137,6 +182,8 @@ export function OfficeScene() {
                   handoff={state.handoff!}
                   fromAgent={from}
                   toAgent={to}
+                  originX={originX}
+                  originY={originY}
                 />
               );
             })()}
