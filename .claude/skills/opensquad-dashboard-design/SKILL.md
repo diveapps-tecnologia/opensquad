@@ -11,7 +11,7 @@ Design and improve the opensquad dashboard's 2D virtual office through a structu
 
 Follow these 6 phases in order. Do NOT skip phases or implement without diagnosis.
 
-> **Phase 7 — FULL SPRITE REVIEW** is an optional audit phase triggered only when the user explicitly requests a full sprite audit (e.g. "faz o full sprite review", "revisa todos os sprites"). When triggered, it replaces phases 2–6 for that session.
+> **Phase 7 — FULL SPRITE REVIEW** is an optional audit phase triggered only when the user explicitly requests a full sprite audit (e.g. "faz o full sprite review", "revisa todos os sprites"). When triggered, it replaces phases 1–6 for that session — skip directly to 7.1 INVENTORY.
 
 ### Phase 1: UNDERSTAND
 
@@ -178,7 +178,7 @@ Check if a sprite visually covers another in a way that breaks scene logic:
 - Desk partially clipped by a wall decoration → FAIL
 - No scene-breaking overlaps visible → PASS
 
-**UNCERTAIN rule:** If you cannot determine PASS or FAIL from the screenshot alone (e.g. the sprite is partially hidden, or the position rule doesn't clearly apply), mark it UNCERTAIN and note the specific question. You will ask the user about all UNCERTAIN sprites together before proceeding to 7.5.
+**UNCERTAIN rule:** If you cannot determine PASS or FAIL from the screenshot alone (e.g. the sprite is partially hidden, or the position rule doesn't clearly apply), mark it UNCERTAIN and note the specific question. You will ask the user about all UNCERTAIN sprites together in 7.4, before proceeding to 7.5.
 
 **Invisible sprite rule:** If a sprite from the inventory is not visible in the screenshot at all (e.g. a per-agent desk sprite outside the visible viewport), mark all four criteria UNCERTAIN with note: "sprite not visible in screenshot."
 
@@ -257,7 +257,7 @@ Wait for the user's answer, then continue.
 
 When all sprites reach PASS status:
 
-1. Present the final screenshot (`/tmp/sprite-review-iter-N.png` or `sprite-review-before.png` if no iterations were needed)
+1. Present the final screenshot (`/tmp/sprite-review-iter-N.png` or `/tmp/sprite-review-before.png` if no iterations were needed)
 2. Show a summary of what was fixed:
    - List each sprite that was corrected, with before/after description
    - List sprites that passed without changes
@@ -266,7 +266,7 @@ When all sprites reach PASS status:
 Ask: "Todos os sprites passaram na revisão. O resultado ficou como esperado? Posso finalizar ou quer ajustes?"
 
 - User approves → **DONE**
-- User wants adjustments → collect feedback, return to **7.5 FIX** with a new targeted plan
+- User wants adjustments → collect feedback, return to **7.5 FIX** with a new targeted plan, then proceed through **7.6 RE-REVIEW** before returning to 7.7
 
 ## Quick Reference
 
