@@ -457,10 +457,43 @@ After writing the final "completed" state to `squads/{name}/state.json`:
 
 This archives the run state for the `runs` command while keeping the squad root clean.
 
-2. Update squad memory (`squads/{name}/_memory/memories.md`) with:
-   - What the user approved/rejected
-   - Any new preferences detected
-   - Review cycle count and outcome
+2. **Update squad memory** — write to BOTH files:
+
+   ### 2a. Update `memories.md` (living preferences)
+
+   Read `squads/{name}/_memory/memories.md` in full. Then identify candidates from this run: **only explicit user feedback** — approvals with comments, rejections with reasons, direct requests ("prefiro X", "não quero Y"). Never infer preferences.
+
+   For each candidate:
+   - If an equivalent memory already exists and is compatible → skip (no duplicate)
+   - If an equivalent memory exists but contradicts the new item → replace with the newer version
+   - If no equivalent exists → add to the correct semantic section:
+     - Writing style choices → `## Estilo de Escrita`
+     - Visual/design preferences → `## Design Visual`
+     - Content structure choices → `## Estrutura de Conteúdo`
+     - Explicit rejections or prohibitions → `## Proibições Explícitas`
+     - Squad-specific technical patterns → `## Técnico (específico do squad)`
+
+   **Never write to `memories.md`:**
+   - Runner inferences ("usuário parece preferir X")
+   - Run scores, review grades, output file paths, topics from past runs
+
+   **Technical routing:** For any technical learning (bugs, workarounds, API behavior):
+   - If it affects any squad (Playwright bugs, OS rendering quirks, API limits) → write to the appropriate `_opensquad/core/best-practices/` file instead of `memories.md`
+   - If it is specific to this squad's output type or toolchain → add to `## Técnico (específico do squad)` following the dedup rules above
+
+   After applying all candidates, write the updated `memories.md`.
+
+   ### 2b. Prepend to `runs.md` (append-only log)
+
+   Read `squads/{name}/_memory/runs.md`. Prepend one new row to the table (immediately after the header row), with:
+   - `Data`: today's date in YYYY-MM-DD format
+   - `Run ID`: the `run_id` for this execution
+   - `Tema`: the topic or user request from this run (1 sentence max)
+   - `Output`: brief description of what was generated (e.g., "Carrossel 9 slides", "Thread 7 posts")
+   - `Resultado`: one of — `Aprovado` / `Rejeitado` / `Publicado` / `Abortado`
+
+   No other data. Do not add preferences, scores, file paths, or technical notes to `runs.md`.
+
 3. Present completion summary:
    ```
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
