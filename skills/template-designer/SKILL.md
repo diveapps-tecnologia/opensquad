@@ -82,6 +82,29 @@ Key rules to always follow:
 
 You should also apply general web design best practices: proper white space, visual hierarchy through scale and weight, consistent spacing rhythm, and balanced composition.
 
+### HARD RULES — Dimensions and Typography
+
+These rules are NON-NEGOTIABLE. Every template must comply:
+
+**Fixed Dimensions (never use height: auto or flexible height):**
+- Instagram Carousel: `width: 1080px; height: 1440px` (3:4 portrait)
+- Instagram Story/Reel: `width: 1080px; height: 1920px` (9:16 portrait)
+- Instagram Post: `width: 1080px; height: 1080px` (1:1 square)
+- LinkedIn Post: `width: 1200px; height: 627px` (1.91:1 horizontal)
+
+The root container of every template MUST set explicit `width` and `height` in pixels. The template must render at exactly these dimensions — no overflow, no scrolling, no flexible height.
+
+**Minimum Font Sizes (Instagram at 1080px width):**
+- Hero/Title: **58px** minimum
+- Heading: **43px** minimum
+- Body text: **34px** minimum
+- Caption/small text: **24px** minimum
+- Absolute minimum for ANY readable text on ANY platform: **20px**
+
+**Font Weight:** 500 or higher for body text and above. Never use font-weight below 400 for any visible text.
+
+Templates that violate these rules are rejected — no exceptions.
+
 ### Step 1: Read Context
 
 Read these files to understand the squad:
@@ -106,7 +129,7 @@ For each base template, create an adapted version:
 - Adjust colors to match the squad's domain/brand (use Sherlock palette if available, company brand colors from company.md if available)
 - Adjust typography following the platform-specific minimum font sizes from `image-design.md`
 - Replace example content with domain-relevant content that reflects the company's industry, audience, and language. Use realistic text that demonstrates how the template would look with actual squad output.
-- Resize viewport if the target is not 1080x1440 (e.g., 1080x1080 for posts, 1080x1920 for stories)
+- Set the root container to the exact fixed dimensions from HARD RULES above. Never use percentage heights or auto heights.
 - Add any visual elements that match the squad's personality
 - Apply proper white space, visual hierarchy, and spacing rhythm per `image-design.md` methodology
 
